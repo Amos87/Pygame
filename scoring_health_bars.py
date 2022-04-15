@@ -1,4 +1,5 @@
 #creating an OOP, Class from firstgame.
+from tkinter.font import BOLD
 import pygame
 pygame.init()
 screen_width = 800
@@ -16,6 +17,9 @@ cha = pygame.image.load('Sprites/standing.png')
 pygame.display.set_caption("First Game")
 clock = pygame.time.Clock()
 
+score = 0 #keep score of how many times the globin is hit.
+
+
 class Enemy(object):
     walkRight = [pygame.image.load(f'Sprites/R{frame}E.png') for frame in range(1,12)]
     walkLeft = [pygame.image.load(f'Sprites/L{frame}E.png') for frame in range(1,12)]
@@ -29,21 +33,28 @@ class Enemy(object):
         self.path = [self.x, self.end]
         self.walkCount = 0
         self.vel = 3
-        #self.hitbox = (self.x + 13, self.y, 40, 60)
+        self.health = 10
+        self.visible = True
+        self.hitbox = (self.x + 13, self.y, 40, 60)
 
     def draw(self, win):
         self.move()
-        # if self.walkCount + 1 >= 33:
-        #     self.walkCount = 0
+        if self.visible:
+            # if self.walkCount + 1 >= 33:
+            #     self.walkCount = 0
 
-        if self.vel > 0:  #whether self.vel is negative or positive
-            win.blit(self.walkRight[self.walkCount], (self.x, self.y))
-            self.walkCount = (self.walkCount + 1) % 11
-        else:
-            win.blit(self.walkLeft[self.walkCount], (self.x, self.y))
-            self.walkCount = (self.walkCount + 1) % 11
-        self.hitbox = (self.x + 13, self.y, 40, 60)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
+            if self.vel > 0:  #whether self.vel is negative or positive
+                win.blit(self.walkRight[self.walkCount], (self.x, self.y))
+                self.walkCount = (self.walkCount + 1) % 11
+            else:
+                win.blit(self.walkLeft[self.walkCount], (self.x, self.y))
+                self.walkCount = (self.walkCount + 1) % 11
+            pygame.draw.rect(win, (0, 128, 0), (self.hitbox[0], self.hitbox[1] - 20, 50, 10))
+            pygame.draw.rect(win, (255, 0, 0), (self.hitbox[0], self.hitbox[1] - 20, 50 - (5 * self.health) , 10))
+            self.hitbox = (self.x + 13, self.y, 40, 60)
+            #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
+
+        
 
     def move(self):
         if self.vel > 0:
@@ -62,7 +73,10 @@ class Enemy(object):
 
     # function for when alien or globin is hit then print.
     def hit(self):
-        print('hit')
+        if self.health > 0:
+            self.health -= 1
+        else:
+            self.visible = False
 
 
 class Player(object):
@@ -103,8 +117,8 @@ class Player(object):
             
             else:
                 win.blit(cha, (self.x, self.y))
-        self.hitbox = (self.x + 13, self.y + 7, 40, 60)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
+        #self.hitbox = (self.x + 13, self.y + 7, 40, 60)
+        #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
 
 class Projectile(object):
     def __init__(self, x, y, radius, color, facing):
@@ -122,11 +136,14 @@ def redrawGameWindow():
     win.blit(bg, (0,0))
     man.draw(win)
     globin.draw(win)
+    text = font.render('Score: ' + str(score), 1, (0,0,0))
+    win.blit(text, (650, 10))
     for bullet in bullets:
         bullet.draw(win)
     pygame.display.update()
     
-
+#create a score board. (font_text, font_size, Bold=Ture,False, Italic=True,False)
+font = pygame.font.SysFont('comicsans', 30, True)
 
 man = Player(300, 410, 64, 64)
 globin = Enemy(100, 410, 64, 64, 500)
@@ -153,7 +170,11 @@ while run:
             if bullet.x + bullet.radius > globin.hitbox[0] and bullet.x - bullet.radius < globin.hitbox[0] + globin.hitbox[2]:
                 # globin gets hit
                 globin.hit()
-                bullets.remove(bullet)
+                if globin.health > 0:
+                    score += 1
+                    bullets.remove(bullet)
+                    
+                    
         if bullet.x < screen_width and bullet.x > 0:
              bullet.x += bullet.vel
         
