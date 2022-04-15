@@ -29,6 +29,7 @@ class Enemy(object):
         self.path = [self.x, self.end]
         self.walkCount = 0
         self.vel = 3
+        #self.hitbox = (self.x + 13, self.y, 40, 60)
 
     def draw(self, win):
         self.move()
@@ -41,6 +42,8 @@ class Enemy(object):
         else:
             win.blit(self.walkLeft[self.walkCount], (self.x, self.y))
             self.walkCount = (self.walkCount + 1) % 11
+        self.hitbox = (self.x + 13, self.y, 40, 60)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
 
     def move(self):
         if self.vel > 0:
@@ -57,6 +60,11 @@ class Enemy(object):
                 self.vel = self.vel * -1
                 #self.walkCount = 0
 
+    # function for when alien or globin is hit then print.
+    def hit(self):
+        print('hit')
+
+
 class Player(object):
     def __init__(self, x, y, width, height):
      
@@ -71,6 +79,7 @@ class Player(object):
         self.right = False
         self.walkcount = 0
         self.standing = True
+        #self.hitbox = (self.x + 13, self.y + 7, 40, 60)
 
     def draw(self, win):
 
@@ -94,6 +103,8 @@ class Player(object):
             
             else:
                 win.blit(cha, (self.x, self.y))
+        self.hitbox = (self.x + 13, self.y + 7, 40, 60)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 1)
 
 class Projectile(object):
     def __init__(self, x, y, radius, color, facing):
@@ -120,16 +131,31 @@ def redrawGameWindow():
 man = Player(300, 410, 64, 64)
 globin = Enemy(100, 410, 64, 64, 500)
 bullets = []
+shootloop = 0  #timer to fire bullets.
 run = True
 while run:
     clock.tick(33)
+     #setting a timer so that its one bullet that comes out at a time.
+    if shootloop > 0:
+        shootloop += 1
+    if shootloop > 3:
+        shootloop = 0
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
            run = False 
     
+    
     for bullet in bullets:
+        #checks to see if bullets is above the buttom of the rectangle & below the top of the rectangle.
+        if bullet.y - bullet.radius < globin.hitbox[1] + globin.hitbox[3] and bullet.y + bullet.radius > globin.hitbox[1]: 
+            # right side of the left side of the rectangle.
+            if bullet.x + bullet.radius > globin.hitbox[0] and bullet.x - bullet.radius < globin.hitbox[0] + globin.hitbox[2]:
+                # globin gets hit
+                globin.hit()
+                bullets.remove(bullet)
         if bullet.x < screen_width and bullet.x > 0:
-            bullet.x += bullet.vel
+             bullet.x += bullet.vel
         
         else:
             #bullets.pop(bullets.index(bullet))
@@ -137,7 +163,7 @@ while run:
 
     keys = pygame.key.get_pressed()
 
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] and shootloop == 0:
         if man.left:
             facing = -1
         elif man.right:
@@ -149,6 +175,7 @@ while run:
         if len(bullets) < 3:
             bullets.append(Projectile(round(man.x + man.width // 2), round(man.y + man.height // 2), 4, (255, 0, 0), facing))
           
+        shootloop = 1
 
     if keys[pygame.K_LEFT] and man.x > man.vel:
             man.x -= man.vel
